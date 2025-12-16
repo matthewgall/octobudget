@@ -1,0 +1,53 @@
+# Octopus Energy Budget Analysis Tool Configuration
+# Copy this file to config.yaml and fill in your details
+
+# Octopus Energy account credentials
+# Required: Your account ID (starts with A-)
+account_id: "A-1234ABCD"
+
+# Required: Your API key (found in your Octopus Energy dashboard)
+# Go to: https://octopus.energy/dashboard/developer/
+api_key: "sk_live_your_api_key_here"
+
+# Meter identifiers (OPTIONAL - will be auto-discovered from your account)
+# Only specify these if you want to override auto-discovery or have multiple properties
+
+# Electricity meter details (leave empty to auto-discover)
+electricity_mpan: ""    # 13-digit MPAN number (optional)
+electricity_serial: ""  # Meter serial number (optional)
+
+# Gas meter details (leave empty to auto-discover)
+gas_mprn: ""      # 10-digit MPRN number (optional)
+gas_serial: ""    # Meter serial number (optional)
+
+# Analysis settings
+
+# Number of days of historical data to analyze (1-365)
+# Default: 90 days (approximately 3 months)
+analysis_period_days: 90
+
+# Optional: Target daily spend in pounds
+# Used for comparison in insights (leave at 0 to disable)
+target_daily_spend: 0
+
+# Anomaly detection threshold (percentage deviation)
+# Default: 50.0 (flags consumption that deviates by more than 50%)
+anomaly_threshold: 50.0
+
+# Current monthly Direct Debit amount in pounds
+# Used to calculate payment recommendations
+# Set to 0 if you don't have a Direct Debit
+direct_debit_amount: 0
+
+# Storage settings
+
+# Directory for storing historical data and analysis results
+# Default: ~/.config/octobudget
+# The directory will be created if it doesn't exist
+storage_path: ""  # Leave empty to use default
+
+# Debugging
+
+# Enable debug logging for troubleshooting
+# Default: false
+debug: false

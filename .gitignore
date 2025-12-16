@@ -1,0 +1,40 @@
+# Binaries
+octobudget
+octobudget-*
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Configuration files with credentials
+config.yaml
+
+# Test binary
+*.test
+
+# Output coverage
+*.out
+
+# Go workspace file
+go.work
+
+# Storage data
+.octobudget/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Reports
+report.*
+*.json
+
+# AI
+CLAUDE.md

@@ -1,0 +1,95 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Get version
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build binaries
+        run: |
+          # Build for multiple platforms
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }}" -o octobudget-linux-amd64
+          GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }}" -o octobudget-linux-arm64
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }}" -o octobudget-darwin-amd64
+          GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }}" -o octobudget-darwin-arm64
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }}" -o octobudget-windows-amd64.exe
+
+      - name: Create checksums
+        run: |
+          sha256sum octobudget-* > checksums.txt
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            octobudget-linux-amd64
+            octobudget-linux-arm64
+            octobudget-darwin-amd64
+            octobudget-darwin-arm64
+            octobudget-windows-amd64.exe
+            checksums.txt
+          body: |
+            ## Octopus Energy Budget Analysis Tool ${{ steps.get_version.outputs.VERSION }}
+
+            ### Installation
+
+            Download the appropriate binary for your platform and make it executable:
+
+            **Linux (amd64)**:
+            ```bash
+            wget https://github.com/matthewgall/octobudget/releases/download/${{ steps.get_version.outputs.VERSION }}/octobudget-linux-amd64
+            chmod +x octobudget-linux-amd64
+            sudo mv octobudget-linux-amd64 /usr/local/bin/octobudget
+            ```
+
+            **macOS (Apple Silicon)**:
+            ```bash
+            wget https://github.com/matthewgall/octobudget/releases/download/${{ steps.get_version.outputs.VERSION }}/octobudget-darwin-arm64
+            chmod +x octobudget-darwin-arm64
+            sudo mv octobudget-darwin-arm64 /usr/local/bin/octobudget
+            ```
+
+            **macOS (Intel)**:
+            ```bash
+            wget https://github.com/matthewgall/octobudget/releases/download/${{ steps.get_version.outputs.VERSION }}/octobudget-darwin-amd64
+            chmod +x octobudget-darwin-amd64
+            sudo mv octobudget-darwin-amd64 /usr/local/bin/octobudget
+            ```
+
+            ### Usage
+
+            1. Copy `config.example.yaml` to `config.yaml`
+            2. Fill in your Octopus Energy credentials
+            3. Run `octobudget`
+
+            See the [README](https://github.com/matthewgall/octobudget#readme) for full documentation.
+
+            ### Checksums
+
+            Verify your download with SHA256 checksums in `checksums.txt`.
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
