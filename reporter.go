@@ -559,10 +559,16 @@ func (r *Reporter) writeTariffChanges(w io.Writer, result *AnalysisResult) {
 			changeIcon = "📉"
 		}
 
+		// Capitalize fuel type (simple alternative to deprecated strings.Title)
+		fuelType := change.FuelType
+		if len(fuelType) > 0 {
+			fuelType = strings.ToUpper(fuelType[:1]) + fuelType[1:]
+		}
+
 		fmt.Fprintf(w, "### %s %s - %s\n\n",
 			changeIcon,
 			change.ChangeDate.Format("2006-01-02"),
-			strings.Title(change.FuelType),
+			fuelType,
 		)
 		fmt.Fprintf(w, "- **Old Tariff:** %s\n", change.OldTariffName)
 		fmt.Fprintf(w, "- **New Tariff:** %s\n", change.NewTariffName)

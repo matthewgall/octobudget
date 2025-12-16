@@ -412,11 +412,10 @@ func (a *Analyzer) generateInsights(result *AnalysisResult, data *CollectedData)
 		monthsOfCredit := result.CurrentBalance / result.ProjectedMonthlyCost
 
 		// Suggest optimal Direct Debit with balance management
-		optimalDD := result.RecommendedDirectDebit
 		if result.CurrentBalance > 500 && monthsOfCredit > 6 {
 			// Significant credit - suggest reducing to burn down over 12 months
 			balanceReduction := result.CurrentBalance / 12 // Spread over a year
-			optimalDD = result.ProjectedMonthlyCost - balanceReduction
+			optimalDD := result.ProjectedMonthlyCost - balanceReduction
 			if optimalDD < 0 {
 				optimalDD = 0
 			}
