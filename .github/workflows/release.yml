@@ -10,86 +10,100 @@ permissions:
 
 jobs:
   release:
-    name: Create Release
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - name: Set up Go
-        uses: actions/setup-go@v6
-        with:
-          go-version: '1.21'
-
-      - name: Get version
-        id: get_version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-
-      - name: Build binaries
-        run: |
-          # Build for multiple platforms
-          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }}" -o octobudget-linux-amd64
-          GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }}" -o octobudget-linux-arm64
-          GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }}" -o octobudget-darwin-amd64
-          GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }}" -o octobudget-darwin-arm64
-          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=${{ steps.get_version.outputs.VERSION }} -X main.commit=${{ github.sha }}" -o octobudget-windows-amd64.exe
-
-      - name: Create checksums
-        run: |
-          sha256sum octobudget-* > checksums.txt
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            octobudget-linux-amd64
-            octobudget-linux-arm64
-            octobudget-darwin-amd64
-            octobudget-darwin-arm64
-            octobudget-windows-amd64.exe
-            checksums.txt
-          body: |
-            ## Octopus Energy Budget Analysis Tool ${{ steps.get_version.outputs.VERSION }}
-
-            ### Installation
-
-            Download the appropriate binary for your platform and make it executable:
-
-            **Linux (amd64)**:
-            ```bash
-            wget https://github.com/matthewgall/octobudget/releases/download/${{ steps.get_version.outputs.VERSION }}/octobudget-linux-amd64
-            chmod +x octobudget-linux-amd64
-            sudo mv octobudget-linux-amd64 /usr/local/bin/octobudget
-            ```
-
-            **macOS (Apple Silicon)**:
-            ```bash
-            wget https://github.com/matthewgall/octobudget/releases/download/${{ steps.get_version.outputs.VERSION }}/octobudget-darwin-arm64
-            chmod +x octobudget-darwin-arm64
-            sudo mv octobudget-darwin-arm64 /usr/local/bin/octobudget
-            ```
-
-            **macOS (Intel)**:
-            ```bash
-            wget https://github.com/matthewgall/octobudget/releases/download/${{ steps.get_version.outputs.VERSION }}/octobudget-darwin-amd64
-            chmod +x octobudget-darwin-amd64
-            sudo mv octobudget-darwin-amd64 /usr/local/bin/octobudget
-            ```
-
-            ### Usage
-
-            1. Copy `config.example.yaml` to `config.yaml`
-            2. Fill in your Octopus Energy credentials
-            3. Run `octobudget`
-
-            See the [README](https://github.com/matthewgall/octobudget#readme) for full documentation.
-
-            ### Checksums
-
-            Verify your download with SHA256 checksums in `checksums.txt`.
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - uses: actions/checkout@v6
+      with:
+        fetch-depth: 0  # Fetch full history for changelog generation
+    
+    - name: Set up Go
+      uses: actions/setup-go@v6
+      with:
+        go-version: '1.25'
+    
+    - name: Cache Go modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-1.25-${{ hashFiles('**/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-1.25-
+    
+    - name: Get dependencies
+      run: go mod download
+    
+    - name: Run tests
+      run: go test -v ./...
+    
+    - name: Run go vet
+      run: go vet ./...
+    
+    - name: Install staticcheck
+      run: go install honnef.co/go/tools/cmd/staticcheck@latest
+    
+    - name: Run staticcheck
+      run: staticcheck ./...
+    
+    - name: Build cross-platform binaries
+      run: |
+        mkdir -p dist
+        VERSION="${{ github.ref_name }}"
+        COMMIT="${{ github.sha }}"
+        
+        # Build for multiple platforms
+        GOOS=linux GOARCH=amd64 go build -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT}" -o dist/octobudget-linux-amd64 .
+        GOOS=linux GOARCH=arm64 go build -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT}" -o dist/octobudget-linux-arm64 .
+        GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT}" -o dist/octobudget-darwin-amd64 .
+        GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT}" -o dist/octobudget-darwin-arm64 .
+        GOOS=windows GOARCH=amd64 go build -ldflags "-X main.version=${VERSION} -X main.commit=${COMMIT}" -o dist/octobudget-windows-amd64.exe .
+        
+        # Create checksums
+        cd dist
+        sha256sum * > checksums.txt
+    
+    - name: Generate release notes
+      run: |
+        # Extract version from tag
+        VERSION="${{ github.ref_name }}"
+        echo "# Release $VERSION" > release_notes.md
+        echo "" >> release_notes.md
+        
+        # Get commits since last tag
+        LAST_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -n "$LAST_TAG" ]; then
+          echo "## Changes since $LAST_TAG" >> release_notes.md
+          echo "" >> release_notes.md
+          git log --pretty=format:"- %s" $LAST_TAG..HEAD >> release_notes.md
+        else
+          echo "## Changes in this release" >> release_notes.md
+          echo "" >> release_notes.md
+          git log --pretty=format:"- %s" --max-count=20 >> release_notes.md
+        fi
+        
+        echo "" >> release_notes.md
+        echo "## Downloads" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "Choose the appropriate binary for your platform:" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "- **Linux (x64)**: octobudget-linux-amd64" >> release_notes.md
+        echo "- **Linux (ARM64)**: octobudget-linux-arm64" >> release_notes.md
+        echo "- **macOS (Intel)**: octobudget-darwin-amd64" >> release_notes.md
+        echo "- **macOS (Apple Silicon)**: octobudget-darwin-arm64" >> release_notes.md
+        echo "- **Windows (x64)**: octobudget-windows-amd64.exe" >> release_notes.md
+        echo "" >> release_notes.md
+        echo "All binaries include SHA256 checksums for verification." >> release_notes.md
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          dist/*
+        body_path: release_notes.md
+        draft: false
+        prerelease: ${{ contains(github.ref_name, '-') }}
+        generate_release_notes: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
