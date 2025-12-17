@@ -137,20 +137,17 @@ Smart analysis of your energy usage with actionable insights:
 
 Reports available in clean Markdown or beautiful HTML with Octopus Energy brand colors.
 
-## Data Storage
+## Privacy & Security
 
-All data is stored locally on your machine:
+**Your data stays on your machine.** octobudget runs entirely locally on your computer:
 
-**Default location**: `~/.config/octobudget/`
+- API credentials and usage data never leave your PC
+- Only communicates directly with Octopus Energy API
+- No third-party services or data collection
+- All historical data stored locally (default: `~/.config/octobudget/`)
+- Open source - verify the code yourself
 
-**Stored data**:
-- `collected_data_*.json` - Raw API snapshots
-- `analysis_*.json` - Complete analysis results
-- `electricity_consumption_*.json` - Daily electricity usage
-- `gas_consumption_*.json` - Daily gas usage
-- `cache_*.json` - API response cache (1-hour TTL for account data)
-
-**Privacy**: Your API key and account data are only used to communicate with the Octopus Energy API. No data is sent to third parties.
+Your API key is only used to authenticate with the official Octopus Energy API. No telemetry, tracking, or external data sharing.
 
 ## How It Works
 
