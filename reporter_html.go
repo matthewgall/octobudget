@@ -58,6 +58,7 @@ func (r *HTMLReporter) GenerateHTMLReport(result *AnalysisResult, outputPath str
 	r.writeHTMLPaymentAnalysis(writer, result)
 	r.writeHTMLConsumptionAnalysis(writer, result)
 	r.writeHTMLExportPerformance(writer, result)
+	r.writeHTMLCharts(writer, result)
 	r.writeHTMLTariffInformation(writer, result)
 	r.writeHTMLAnomalies(writer, result)
 	r.writeHTMLRecommendations(writer, result)
@@ -718,6 +719,42 @@ func (r *HTMLReporter) writeHTMLExportPerformance(w io.Writer, result *AnalysisR
 `,
 			savingsRate,
 		)
+	}
+
+	fmt.Fprintf(w, `
+        </div>
+`)
+}
+
+func (r *HTMLReporter) writeHTMLCharts(w io.Writer, result *AnalysisResult) {
+	// Only show charts if we have data
+	if result.DailyUsageChart == "" && result.DailyCostChart == "" {
+		return
+	}
+
+	fmt.Fprintf(w, `
+        <div class="card">
+            <h2>📊 Trend Analysis</h2>
+`)
+
+	// Daily Usage Chart
+	if result.DailyUsageChart != "" {
+		fmt.Fprintf(w, `
+            <h3>Daily Energy Usage</h3>
+            <div style="text-align: center; margin: 20px 0;">
+                <img src="data:image/png;base64,%s" alt="Daily Energy Usage Chart" style="max-width: 100%%; height: auto; border-radius: 8px;">
+            </div>
+`, result.DailyUsageChart)
+	}
+
+	// Daily Cost Chart
+	if result.DailyCostChart != "" {
+		fmt.Fprintf(w, `
+            <h3>Daily Energy Costs</h3>
+            <div style="text-align: center; margin: 20px 0;">
+                <img src="data:image/png;base64,%s" alt="Daily Energy Costs Chart" style="max-width: 100%%; height: auto; border-radius: 8px;">
+            </div>
+`, result.DailyCostChart)
 	}
 
 	fmt.Fprintf(w, `

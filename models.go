@@ -142,6 +142,9 @@ type AnalysisResult struct {
 	Anomalies                   []Anomaly      `json:"anomalies"`
 	TariffChanges               []TariffChange `json:"tariffChanges"`
 	Insights                    []Insight      `json:"insights"`
+	// Charts (base64 encoded PNG images)
+	DailyUsageChart string `json:"dailyUsageChart,omitempty"`
+	DailyCostChart  string `json:"dailyCostChart,omitempty"`
 }
 
 // Anomaly represents a detected anomaly in consumption or cost

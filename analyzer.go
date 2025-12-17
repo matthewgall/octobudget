@@ -132,6 +132,24 @@ func (a *Analyzer) Analyze(data *CollectedData) (*AnalysisResult, error) {
 	a.logger.LogAnalysisStage("insights_generation")
 	result.Insights = a.generateInsights(result, data)
 
+	// Generate charts
+	a.logger.LogAnalysisStage("chart_generation")
+	chartGen := NewChartGenerator()
+
+	if usageChart, err := chartGen.GenerateDailyUsageChart(data); err == nil {
+		result.DailyUsageChart = usageChart
+		a.logger.Info("Generated daily usage chart")
+	} else {
+		a.logger.Warn("Failed to generate daily usage chart", "error", err)
+	}
+
+	if costChart, err := chartGen.GenerateDailyCostChart(data); err == nil {
+		result.DailyCostChart = costChart
+		a.logger.Info("Generated daily cost chart")
+	} else {
+		a.logger.Warn("Failed to generate daily cost chart", "error", err)
+	}
+
 	a.logger.Info("Analysis completed",
 		"anomalies", len(result.Anomalies),
 		"tariff_changes", len(result.TariffChanges),
