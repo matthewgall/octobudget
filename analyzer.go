@@ -48,6 +48,28 @@ func (a *Analyzer) Analyze(data *CollectedData) (*AnalysisResult, error) {
 		}
 	}
 
+	// Log what data we have available
+	hasElectricity := len(data.ElectricityConsumption) > 0
+	hasGas := len(data.GasConsumption) > 0
+	hasExport := len(data.ElectricityExport) > 0
+
+	if !hasElectricity && !hasGas {
+		return nil, &DataError{
+			DataType: "consumption",
+			Message:  "no consumption data available - check meter configuration and ensure smart meter is sending data",
+		}
+	}
+
+	if !hasElectricity {
+		a.logger.Warn("No electricity consumption data - analysis will be limited to gas only")
+	}
+	if !hasGas {
+		a.logger.Info("No gas consumption data - electricity-only household or gas not configured")
+	}
+	if hasExport {
+		a.logger.Info("Export data detected - solar/battery export performance will be included")
+	}
+
 	result := &AnalysisResult{
 		GeneratedAt:                 time.Now(),
 		CurrentBalance:              data.Account.Balance,

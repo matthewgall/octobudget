@@ -158,3 +158,27 @@ func (c *Config) Validate() error {
 
 	return nil
 }
+
+// GetWarnings returns non-fatal configuration warnings
+func (c *Config) GetWarnings() []string {
+	var warnings []string
+
+	// Warn about missing Direct Debit amount
+	if c.DirectDebitAmount == 0 {
+		warnings = append(warnings, "direct_debit_amount not set - payment recommendations will be limited")
+	}
+
+	// Warn about unusual analysis periods
+	if c.AnalysisPeriodDays < 30 {
+		warnings = append(warnings, "analysis_period_days is less than 30 - may not have enough data for accurate trends")
+	}
+
+	// Warn about unusual anomaly threshold
+	if c.AnomalyThreshold < 20 {
+		warnings = append(warnings, "anomaly_threshold is very low - may detect too many false positives")
+	} else if c.AnomalyThreshold > 80 {
+		warnings = append(warnings, "anomaly_threshold is very high - may miss genuine anomalies")
+	}
+
+	return warnings
+}

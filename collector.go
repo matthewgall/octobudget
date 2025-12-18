@@ -254,7 +254,17 @@ func (c *Collector) CollectAll() (*CollectedData, error) {
 
 	// Save complete collected data
 
+	// Log summary of collected data
 	c.logger.Info("Data collection completed successfully")
+	c.logger.Info("Collection summary",
+		"electricity_records", len(data.ElectricityConsumption),
+		"export_records", len(data.ElectricityExport),
+		"gas_records", len(data.GasConsumption),
+		"electricity_agreements", len(data.ElectricityAgreements),
+		"export_agreements", len(data.ElectricityExportAgreements),
+		"gas_agreements", len(data.GasAgreements),
+	)
+
 	return data, nil
 }
 

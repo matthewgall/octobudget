@@ -72,6 +72,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Show configuration warnings
+	if warnings := config.GetWarnings(); len(warnings) > 0 {
+		for _, warning := range warnings {
+			logger.Warn("Configuration warning", "message", warning)
+		}
+	}
+
 	logger.Info("Configuration loaded successfully")
 
 	// Initialize storage
